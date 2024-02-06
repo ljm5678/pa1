@@ -195,6 +195,7 @@ PNG ImgList::Render(bool fillgaps, int fillmode) const {
             }
             temp = temp->south;
             y++;
+            x = 0;
         }
     } else {
         if (fillmode == 1) {
@@ -229,6 +230,7 @@ PNG ImgList::Render(bool fillgaps, int fillmode) const {
                 }
                 temp = temp->south;
                 y++;
+                x = 0;
             }
         } else if (fillmode == 0) {
             ImgNode *temp = northwest;
@@ -248,6 +250,7 @@ PNG ImgList::Render(bool fillgaps, int fillmode) const {
                 }
                 temp = temp->south;
                 y++;
+                x = 0;
             }
         } else{
             ImgNode *temp = northwest;
@@ -282,6 +285,7 @@ PNG ImgList::Render(bool fillgaps, int fillmode) const {
                 }
                 temp = temp->south;
                 y++;
+                x = 0;
             }
         }
     }
