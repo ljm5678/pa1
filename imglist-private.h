@@ -8,6 +8,6 @@
  */
 
 /**************************************/
-/* ADD YOUR PRIVATE DECLARATIONS HERE */
+static ImgNode* setup_node(unsigned int x, unsigned int y, ImgNode* preveous_node, PNG& img);
 /**************************************/
 

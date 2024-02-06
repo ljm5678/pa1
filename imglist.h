@@ -53,7 +53,6 @@ class ImgList {
 
         void Clear();       // deallocates all nodes in the list
         void Copy(const ImgList& otherlist); // copies content of otherlist into this list and sets this list's member pointers
-    
         // modifiers
         ImgNode* SelectNode(ImgNode* rowstart, int selectionmode); // returns a pointer to the node which best satisfies specific criteria
         void Carve(int selectionmode); // removes a node from each row of the list based on specific criteria

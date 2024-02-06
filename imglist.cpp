@@ -21,7 +21,7 @@
 ImgList::ImgList(PNG& img) {
     // build the linked node structure and set the member attributes appropriately
     ImgNode* dummy = new ImgNode();
-    northwest = setup_node(0, 0, NULL, img);
+    northwest = ImgList::setup_node(0, 0, NULL, img);
     dummy = northwest;
     while(dummy->east  == NULL){
         dummy = dummy -> east;
@@ -39,7 +39,7 @@ ImgList::ImgList() {
     southeast = new ImgNode();
 }
 
-ImgNode* setup_node(unsigned int x, unsigned int y, ImgNode* preveous_node, PNG& img){
+ ImgNode* ImgList::setup_node(unsigned int x, unsigned int y, ImgNode* preveous_node, PNG& img){
     if(x>= img.width() || y>= img.height()){
         return NULL;
     }
