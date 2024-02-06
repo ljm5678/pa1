@@ -395,9 +395,10 @@ ImgNode* ImgList::setup_node(unsigned int x, unsigned int y, ImgNode* preveous_n
     else if (isHorizontal == 0){
         list_to_add->north = preveous_node;
     }
-
-    list_to_add -> east = setup_node(x++, y,  list_to_add, img, 1);
-    list_to_add -> south = setup_node(x, y++,  list_to_add, img, 0);
+    
+    list_to_add -> east = setup_node(x + 1, y,  list_to_add, img, 1);
+    
+    list_to_add -> south = setup_node(x, y + 1,  list_to_add, img, 0);
 
     return list_to_add;
 }
