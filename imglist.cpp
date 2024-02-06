@@ -9,6 +9,8 @@
 
 #include "imglist.h"
 
+
+
 #include <math.h> // provides fmax, fmin, and fabs functions
 
 /*********************
@@ -20,17 +22,19 @@
  */
 ImgList::ImgList(PNG& img) {
     // build the linked node structure and set the member attributes appropriately
-    ImgNode* dummy = new ImgNode();
-    northwest = ImgList::setup_node(0, 0, NULL, img);
+    ImgNode* dummy;
+    northwest = ImgList::setup_node(0, 0, NULL, img, 2);
     dummy = northwest;
-    while(dummy->east  == NULL){
+    while(dummy->east  != NULL){
         dummy = dummy -> east;
     }
-    while(dummy->south  == NULL){
+    while(dummy->south  != NULL){
         dummy = dummy -> south;
     }
     southeast = dummy;
     dummy = NULL;
+    width = img.width();
+    height = img.height();
 }
 
 ImgList::ImgList() {
@@ -39,38 +43,7 @@ ImgList::ImgList() {
     southeast = new ImgNode();
 }
 
- ImgNode* ImgList::setup_node(unsigned int x, unsigned int y, ImgNode* preveous_node, PNG& img){
-    if(x>= img.width() || y>= img.height()){
-        return NULL;
-    }
 
-    RGBAPixel *pixel = img.getPixel(x, y);
-    ImgNode* list_to_add = new ImgNode();
-
-    
-
-    //set the colour of the list
-    list_to_add -> colour.r = pixel -> r;
-    list_to_add -> colour.b = pixel -> b;
-    list_to_add -> colour.g = pixel -> g;
-
-    if (x == 0){
-        list_to_add -> west = NULL;
-    } else{
-        list_to_add -> west = preveous_node;
-    } 
-
-    if (y == 0){
-        list_to_add -> north = NULL;
-    } else {
-        list_to_add -> north = preveous_node;
-    }
-    list_to_add -> west = setup_node(x++, y++,  list_to_add, img);
-
-    return list_to_add;
-
-
-}
 
 
 
@@ -92,7 +65,7 @@ unsigned int ImgList::GetDimensionX() const {
     while(temp == NULL){
         count++;
         temp= temp -> east;
-        
+
     }
     return count;
 }
@@ -112,7 +85,7 @@ unsigned int ImgList::GetDimensionY() const {
     while(temp == NULL){
         count++;
         temp= temp -> south;
-        
+
     }
     return count;
 }
@@ -126,17 +99,7 @@ unsigned int ImgList::GetDimensionY() const {
  */
 unsigned int ImgList::GetDimensionFullX() const {
     // replace the following line with your implementation
-    unsigned int count  = 1;
-    ImgNode* temp = northwest;
-    while(temp == NULL){
-        if(temp -> skipright == 0){
-            count ++;
-        }else{
-            count += temp->skipright;
-        }
-        temp= temp -> east;
-    }
-    return count;
+    return width;
 }
 
 /**
@@ -157,9 +120,40 @@ unsigned int ImgList::GetDimensionFullX() const {
  * using the "distanceTo" function found in RGBAPixel.h.
  */
 ImgNode* ImgList::SelectNode(ImgNode* rowstart, int selectionmode) {
-    // add your implementation below
-  
-    return NULL;
+    if (selectionmode ==0) {
+        ImgNode* min = new ImgNode();
+        min->colour.r = 255;
+        min->colour.g = 255;
+        min->colour.b = 255;
+        min->colour.a = 1;
+        ImgNode* temp = min;
+        rowstart = rowstart->east;
+        while (rowstart->east != NULL) {
+            if (rowstart->east->east == NULL) {
+                break;
+            }
+            if (((rowstart->colour.r + rowstart->colour.g + rowstart->colour.b) * rowstart->colour.a) <= ((min->colour.r + min->colour.g + min->colour.b) * min->colour.a)) {
+                min = rowstart;
+            }
+            rowstart = rowstart->east;
+        }
+        delete temp;
+        return min;
+    }
+    else {
+        rowstart = rowstart -> east;
+        double min = rowstart->colour.distanceTo(rowstart->east->colour) + rowstart->colour.distanceTo(rowstart->west->colour);
+        ImgNode* min_node = rowstart;
+        while (rowstart->east->east != NULL) {
+            rowstart = rowstart->east;
+            double temp = rowstart->colour.distanceTo(rowstart->east->colour) + rowstart->colour.distanceTo(rowstart->west->colour);
+            if (temp < min) {
+                min = temp;
+                min_node = rowstart;
+            }
+        }
+        return min_node;
+    }
 }
 
 /**
@@ -181,9 +175,117 @@ ImgNode* ImgList::SelectNode(ImgNode* rowstart, int selectionmode) {
  */
 PNG ImgList::Render(bool fillgaps, int fillmode) const {
     // Add/complete your implementation below
-  
-    PNG outpng; //this will be returned later. Might be a good idea to resize it at some point.
-  
+
+    PNG outpng(width, height); //this will be returned later. Might be a good idea to resize it at some point.
+    if (!fillgaps) {
+        ImgNode *temp = northwest;
+        unsigned int x = 0;
+        unsigned int y = 0;
+        while (temp != NULL) {
+            ImgNode *temp2 = temp;
+            while (temp2 != NULL) {
+                RGBAPixel *pixel = outpng.getPixel(x, y);
+                pixel->r = temp2->colour.r;
+                pixel->g = temp2->colour.g;
+                pixel->b = temp2->colour.b;
+                pixel->a = temp2->colour.a;
+
+                temp2 = temp2->east;
+                x++;
+            }
+            temp = temp->south;
+            y++;
+        }
+    } else {
+        if (fillmode == 1) {
+            ImgNode *temp = northwest;
+            unsigned int x = 0;
+            unsigned int y = 0;
+            while (temp != NULL) {
+                ImgNode *temp2 = temp;
+                while (temp2 != NULL) {
+
+                        RGBAPixel *pixel = outpng.getPixel(x, y);
+                        pixel->r = temp2->colour.r;
+                        pixel->g = temp2->colour.g;
+                        pixel->b = temp2->colour.b;
+                        pixel->a = temp2->colour.a;
+                        temp2 = temp2->east;
+                        x++;
+                        if (temp2->skipright != 0){
+                            int r = (temp2->colour.r + temp2->east->colour.r)/2;
+                            int g = (temp2->colour.g + temp2->east->colour.g)/2;
+                            int b = (temp2->colour.b + temp2->east->colour.b)/2;
+                            float a = (temp2->colour.a + temp2->east->colour.a)/2;
+                            for (int i = 0; i < temp2->skipright; i++){
+                                RGBAPixel *pixel = outpng.getPixel(x, y);
+                                pixel->r = r;
+                                pixel->g = g;
+                                pixel->b = b;
+                                pixel->a = a;
+                                x++;
+                            }
+                        }
+                }
+                temp = temp->south;
+                y++;
+            }
+        } else if (fillmode == 0) {
+            ImgNode *temp = northwest;
+            unsigned int x = 0;
+            unsigned int y = 0;
+            while (temp != NULL) {
+                ImgNode *temp2 = temp;
+                while (temp2 != NULL) {
+                    for (x; x <= x + temp2->skipright; x++) {
+                        RGBAPixel *pixel = outpng.getPixel(x, y);
+                        pixel->r = temp2->colour.r;
+                        pixel->g = temp2->colour.g;
+                        pixel->b = temp2->colour.b;
+                        pixel->a = temp2->colour.a;
+                    }
+                    temp2 = temp2->east;
+                }
+                temp = temp->south;
+                y++;
+            }
+        } else{
+            ImgNode *temp = northwest;
+            unsigned int x = 0;
+            unsigned int y = 0;
+            while (temp != NULL) {
+                ImgNode *temp2 = temp;
+                while (temp2 != NULL) {
+
+                    RGBAPixel *pixel = outpng.getPixel(x, y);
+                    pixel->r = temp2->colour.r;
+                    pixel->g = temp2->colour.g;
+                    pixel->b = temp2->colour.b;
+                    pixel->a = temp2->colour.a;
+                    temp2 = temp2->east;
+                    x++;
+                    if (temp2->skipright != 0){
+
+                        for (int i = 0; i < temp2->skipright; i++){
+                            int r = (i + 1) * (temp2->colour.r + temp2->east->colour.r) / (temp2->skipright + 1);
+                            int g = (i + 1) * (temp2->colour.g + temp2->east->colour.g) / (temp2->skipright + 1);
+                            int b = (i + 1) * (temp2->colour.b + temp2->east->colour.b) / (temp2->skipright + 1);
+                            float a = (i + 1) * (temp2->colour.a + temp2->east->colour.a) / (temp2->skipright + 1);
+                            RGBAPixel *pixel = outpng.getPixel(x, y);
+                            pixel->r = r;
+                            pixel->g = g;
+                            pixel->b = b;
+                            pixel->a = a;
+                            x++;
+                        }
+                    }
+                }
+                temp = temp->south;
+                y++;
+            }
+        }
+    }
+
     return outpng;
 }
 
@@ -233,8 +335,21 @@ void ImgList::Carve(unsigned int rounds, int selectionmode) {
  *       member attributes have values consistent with an empty list.
  */
 void ImgList::Clear() {
-    // add your implementation here
-	
+    ImgNode *temp = northwest;
+    ImgNode *temp3 = temp;
+    temp = temp->east;
+
+    while (temp -> south != NULL) {
+
+        while (temp != NULL) {
+            ImgNode *temp2 = temp;
+            temp = temp->east;
+            delete temp2;
+        }
+        temp3 = temp3 -> south;
+        temp = temp3 -> east;
+        delete temp3 -> north;
+    }
 }
 
 /**
@@ -252,3 +367,37 @@ void ImgList::Copy(const ImgList& otherlist) {
 * IF YOU DEFINED YOUR OWN PRIVATE FUNCTIONS IN imglist-private.h, YOU MAY ADD YOUR IMPLEMENTATIONS BELOW *
 *************************************************************************************************/
 
+ImgNode* ImgList::setup_node(unsigned int x, unsigned int y, ImgNode* preveous_node, PNG& img, int isHorizontal){
+    if(x>= img.width() || y>= img.height()){
+        return NULL;
+    }
+
+    RGBAPixel *pixel = img.getPixel(x, y);
+    ImgNode* list_to_add = new ImgNode();
+
+
+
+    //set the colour of the list
+    list_to_add -> colour.r = pixel -> r;
+    list_to_add -> colour.b = pixel -> b;
+    list_to_add -> colour.g = pixel -> g;
+    list_to_add -> colour.a = pixel -> a;
+
+    if (x == 0) {
+        list_to_add-> west = nullptr;
+    }
+    if (y == 0) {
+        list_to_add->north = nullptr;
+    }
+    if (isHorizontal == 1) {
+        list_to_add->west = preveous_node;
+    }
+    else if (isHorizontal == 0){
+        list_to_add->north = preveous_node;
+    }
+
+    list_to_add -> east = setup_node(x++, y,  list_to_add, img, 1);
+    list_to_add -> south = setup_node(x, y++,  list_to_add, img, 0);
+
+    return list_to_add;
+}

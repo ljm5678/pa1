@@ -8,6 +8,8 @@
  */
 
 /**************************************/
-static ImgNode* setup_node(unsigned int x, unsigned int y, ImgNode* preveous_node, PNG& img);
+unsigned int width = 0;
+unsigned int height = 0;
+static ImgNode* setup_node(unsigned int x, unsigned int y, ImgNode* preveous_node, PNG& img, int isHorizontal);
 /**************************************/
 
